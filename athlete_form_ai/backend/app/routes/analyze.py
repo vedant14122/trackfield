@@ -1,11 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from app.utils.file_handler import save_to_temp
-from app.pose.mediapipe_runner import extract_2d_keypoints
-from app.pose.videopose_runner import convert_to_3d
-from app.pose.kalman_filter import smooth_keypoints_3d
-from app.gemini.feedback_generator import compare_to_model
-from app.gemini.model_builder import get_personalized_model
 from app.utils.supabase_client import supabase
+from app.pose_pipeline import process_video
 
 import os
 import json
@@ -30,32 +26,24 @@ async def analyze(
     if motion_type not in ("sprint", "jump"):
         raise HTTPException(status_code=400, detail="Invalid motion_type")
 
-    # Get user profile from Supabase
     response = supabase.table("user_profiles").select("*").eq("id", user_id).single().execute()
     if response.error or not response.data:
         raise HTTPException(status_code=400, detail="User profile not found")
     user_profile = response.data
 
-    # Save to temp path for initial processing
     temp_path = await save_to_temp(file)
 
-    # Rename and move permanently
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     base_name = f"{user_id}_{motion_type}_{timestamp}"
     video_filename = f"{base_name}.mp4"
     video_path = os.path.join(STORAGE_DIR, video_filename)
     os.rename(temp_path, video_path)
 
-    # Run pose pipeline
-    keypoints_2d = extract_2d_keypoints(video_path)
-    keypoints_3d = convert_to_3d(keypoints_2d)
-    smoothed_3d = smooth_keypoints_3d(keypoints_3d)
+    try:
+        feedback = process_video(video_path, user_profile, motion_type)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    # Build model + generate feedback
-    model = get_personalized_model(user_profile, motion_type)
-    feedback = compare_to_model(smoothed_3d, model)
-
-    # Save feedback to file
     feedback_filename = f"{base_name}_feedback.json"
     feedback_path = save_feedback_file(feedback, feedback_filename)
 
