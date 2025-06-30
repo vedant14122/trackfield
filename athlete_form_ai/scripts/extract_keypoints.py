@@ -26,5 +26,6 @@ while cap.isOpened():
 
 cap.release()
 keypoints_all = np.array(keypoints_all)
+print(f"Processed frame {len(keypoints_all)}", end="\r")
 np.save("pose_2d.npy", keypoints_all)
 print("2D keypoints saved to pose_2d.npy")
