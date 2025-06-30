@@ -1,6 +1,6 @@
 import numpy as np
 
-# Mapping MediaPipe 33 keypoints to 17 joints for VideoPose3D (adjust as needed)
+# Mapping MediaPipe 33 keypoints to 17 joints for VideoPose3D (can be adjusted when we need btw)
 mp_to_h36m = [0, 11, 12, 23, 24, 25, 26, 27, 28, 29, 30, 13, 14, 15, 16, 17, 18]
 
 keypoints = np.load("pose_2d.npy")  # (frames, 33, 2)
