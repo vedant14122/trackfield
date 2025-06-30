@@ -1,7 +1,8 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from app.utils.file_handler import save_to_temp
-from app.utils.supabase_client import supabase
+from app.utils.sn_client import supabase
 from app.pose_pipeline import process_video
+from app.gemini.feedback_generator import compare_to_model, generate_llm_feedback
 
 import os
 import json
@@ -44,6 +45,11 @@ async def analyze(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+    try:
+        summary = generate_llm_feedback(feedback, motion_type)
+    except Exception as e:
+        summary = f"[LLM Summary Error] {e}"
+
     feedback_filename = f"{base_name}_feedback.json"
     feedback_path = save_feedback_file(feedback, feedback_filename)
 
@@ -51,5 +57,6 @@ async def analyze(
         "message": "Analysis complete.",
         "video_url": f"/static/{video_filename}",
         "feedback_url": f"/static/{feedback_filename}",
-        "feedback": feedback
+        "feedback": feedback,
+        "feedback_summary": summary
     }

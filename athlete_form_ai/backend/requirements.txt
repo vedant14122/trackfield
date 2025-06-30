@@ -11,3 +11,4 @@ torchvision
 google-generativeai
 python-dotenv
 scipy
+supabase
