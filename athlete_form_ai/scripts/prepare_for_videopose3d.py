@@ -7,4 +7,4 @@ keypoints = np.load("pose_2d.npy")  # (frames, 33, 2)
 keypoints_17 = keypoints[:, mp_to_h36m, :]
 
 np.savez_compressed("data_2d_custom.npz", positions_2d=[keypoints_17])
-print("✅ Saved 17-joint keypoints in data_2d_custom.npz")
+print("Saved 17-joint keypoints in data_2d_custom.npz")
