@@ -92,7 +92,14 @@ for subject in keypoints.keys():
     for action in keypoints[subject]:
         for cam_idx, kps in enumerate(keypoints[subject][action]):
             # Normalize camera frame
+            if dataset.cameras() is None:
+                continue
+                
             cam = dataset.cameras()[subject][cam_idx]
+            
+            if not isinstance(cam, dict):
+                continue  # or raise an error for debugging
+            
             kps[..., :2] = normalize_screen_coordinates(kps[..., :2], w=cam['res_w'], h=cam['res_h'])
             keypoints[subject][action][cam_idx] = kps
 
@@ -126,18 +133,21 @@ def fetch(subjects, action_filter=None, subset=1, parse_3d_poses=True):
             for i in range(len(poses_2d)): # Iterate across cameras
                 out_poses_2d.append(poses_2d[i])
                 
-            if subject in dataset.cameras():
+            if subject in dataset.cameras() and dataset.cameras() is not None:
                 cams = dataset.cameras()[subject]
                 assert len(cams) == len(poses_2d), 'Camera count mismatch'
                 for cam in cams:
                     if 'intrinsic' in cam:
                         out_camera_params.append(cam['intrinsic'])
                 
-            if parse_3d_poses and 'positions_3d' in dataset[subject][action]:
-                poses_3d = dataset[subject][action]['positions_3d']
-                assert len(poses_3d) == len(poses_2d), 'Camera count mismatch'
-                for i in range(len(poses_3d)): # Iterate across cameras
-                    out_poses_3d.append(poses_3d[i])
+            if parse_3d_poses:
+                if 'positions_3d' in dataset[subject][action]:
+                    poses_3d = dataset[subject][action]['positions_3d']
+                    assert len(poses_3d) == len(poses_2d), 'Camera count mismatch'
+                    for i in range(len(poses_3d)): # Iterate across cameras
+                        out_poses_3d.append(poses_3d[i])
+                else:
+                    pass
     
     if len(out_camera_params) == 0:
         out_camera_params = None
@@ -159,7 +169,6 @@ def fetch(subjects, action_filter=None, subset=1, parse_3d_poses=True):
             if out_poses_3d is not None:
                 out_poses_3d[i] = out_poses_3d[i][::stride]
     
-
     return out_camera_params, out_poses_3d, out_poses_2d
 
 action_filter = None if args.actions == '*' else args.actions.split(',')
@@ -200,6 +209,9 @@ print('INFO: Trainable parameter count:', model_params)
 if torch.cuda.is_available():
     model_pos = model_pos.cuda()
     model_pos_train = model_pos_train.cuda()
+    
+# Initialize model_traj to None by default
+model_traj = None
     
 if args.resume or args.evaluate:
     chk_filename = os.path.join(args.checkpoint, args.resume if args.resume else args.evaluate)
@@ -301,7 +313,8 @@ if not args.evaluate:
         lr = checkpoint['lr']
         if semi_supervised:
             model_traj_train.load_state_dict(checkpoint['model_traj'])
-            model_traj.load_state_dict(checkpoint['model_traj'])
+            if model_traj is not None:
+                model_traj.load_state_dict(checkpoint['model_traj'])
             semi_generator.set_random_state(checkpoint['random_state_semi'])
             
     print('** Note: reported losses are averaged over all frames and test-time augmentation is not used here.')
