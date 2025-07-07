@@ -1,9 +1,15 @@
 import torch
 import numpy as np
 import os
-from pose.models import TemporalModel  # You need to place VideoPose3D code in your repo
+import sys
 
-# Load model only once
+# Add VideoPose3D repo to path
+sys.path.append(os.path.abspath("models"))
+
+from common.model import TemporalModel
+from common.generators import UnchunkedGenerator
+
+# Load VideoPose3D model once and reuse
 _model = None
 def load_model():
     global _model
@@ -11,10 +17,18 @@ def load_model():
         return _model
 
     model = TemporalModel(
-        17, 2, 17, filter_widths=[3, 3, 3, 3, 3],
-        causal=False, dropout=0.25, channels=1024, dense=False
+        num_joints_in=17,
+        in_features=2,
+        num_joints_out=17,
+        filter_widths=[3, 3, 3, 3, 3],
+        causal=False,
+        dropout=0.25,
+        channels=1024,
+        dense=False
     )
-    checkpoint = torch.load("weights/pretrained.bin", map_location="cpu")
+
+    checkpoint_path = "models/checkpoint/pretrained_h36m_detectron_coco.bin"
+    checkpoint = torch.load(checkpoint_path, map_location=torch.device("cpu"))
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
     _model = model
@@ -22,21 +36,19 @@ def load_model():
 
 def convert_to_3d(keypoints_2d):
     """
-    keypoints_2d: (frames, 17, 2) numpy array
-    returns: (frames, 17, 3) numpy array
+    Args:
+        keypoints_2d: np.ndarray of shape (frames, 17, 2)
+    Returns:
+        keypoints_3d: np.ndarray of shape (frames, 17, 3)
     """
     model = load_model()
 
-    # Normalize keypoints (standard VideoPose3D preprocessing)
-    # Convert to tensor with shape (1, frames, 17, 2)
-    inputs = torch.from_numpy(keypoints_2d).float().unsqueeze(0)
-
-    # Padding for temporal convolution
-    receptive_field = model.receptive_field()
-    pad = (receptive_field - 1) // 2
-    inputs_padded = torch.nn.functional.pad(inputs, (0, 0, 0, 0, pad, pad), mode='replicate')
+    # Wrap in a dummy generator
+    gen = UnchunkedGenerator(None, [keypoints_2d], pad=model.receptive_field() // 2, causal=False)
+    inputs_2d = gen.next_epoch()
 
     with torch.no_grad():
-        predicted_3d = model(inputs_padded)
-    
-    return predicted_3d.squeeze(0).cpu().numpy()
+        for _, batch, _, _ in inputs_2d:
+            predicted_3d_pos = model(batch)
+            predicted_3d_pos = predicted_3d_pos.squeeze(0).cpu().numpy()  # (frames, 17, 3)
+            return predicted_3d_pos
