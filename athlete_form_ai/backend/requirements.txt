@@ -11,3 +11,5 @@ torchvision
 google-generativeai
 python-dotenv
 scipy
+httpx
+python-jose[cryptography]
