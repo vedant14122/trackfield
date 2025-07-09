@@ -1,39 +1,51 @@
-import numpy as np
+import os
+from dotenv import load_dotenv
+import google.generativeai as genai
 
-def calculate_angle(a, b, c):
-    a = np.array(a)
-    b = np.array(b)
-    c = np.array(c)
-    ba = a - b
-    bc = c - b
-    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc) + 1e-8)
-    angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
-    return np.degrees(angle)
+load_dotenv()
 
-def compare_to_model(smoothed_3d, model):
-    feedback = []
-    for frame_idx, frame in enumerate(smoothed_3d):
-        hip = frame[23]      # right hip
-        knee = frame[25]     # right knee
-        ankle = frame[27]    # right ankle
-        shoulder = frame[11] # right shoulder
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError("❌ GEMINI_API_KEY not found in .env file.")
 
-        hip_angle = calculate_angle(shoulder, hip, knee)
-        knee_angle = calculate_angle(hip, knee, ankle)
+genai.configure(api_key=api_key)
+model = genai.GenerativeModel("gemini-pro")
 
-        hip_diff = abs(hip_angle - model["hip_angle"]["ideal"])
-        knee_diff = abs(knee_angle - model["knee_angle"]["ideal"])
 
-        if hip_diff > model["hip_angle"]["tolerance"]:
-            feedback.append(
-                f"Frame {frame_idx}: Hip angle off by {int(hip_diff)}° (ideal {model['hip_angle']['ideal']}°)"
-            )
-        if knee_diff > model["knee_angle"]["tolerance"]:
-            feedback.append(
-                f"Frame {frame_idx}: Knee angle off by {int(knee_diff)}° (ideal {model['knee_angle']['ideal']}°)"
-            )
+def summarize_angles(angle_data):
+    """
+    Convert the list of per-frame joint angles into a readable summary string.
+    You could enhance this with per-joint averages, variances, etc.
+    """
+    summary_lines = []
+    num_frames = len(angle_data)
 
-    if not feedback:
-        feedback.append("Form looks good!")
+    # Collect per-joint stats
+    joint_summaries = {}
+    for frame in angle_data:
+        for joint, angle in frame.items():
+            if angle is None: continue
+            joint_summaries.setdefault(joint, []).append(angle)
 
-    return feedback
+    for joint, values in joint_summaries.items():
+        avg = sum(values) / len(values)
+        min_v = min(values)
+        max_v = max(values)
+        summary_lines.append(
+            f"{joint.replace('_', ' ').title()}: avg {avg:.1f}°, min {min_v:.1f}°, max {max_v:.1f}°"
+        )
+
+    return "\n".join(summary_lines)
+
+
+def get_gemini_feedback(angle_data):
+    summary = summarize_angles(angle_data)
+
+    prompt = (
+        "You're a professional track & field form coach. Analyze this joint angle data "
+        "from a video of an athlete's motion. Point out any issues with form, asymmetry, or inefficiency.\n\n"
+        f"{summary}"
+    )
+
+    response = model.generate_content(prompt)
+    return response.text
