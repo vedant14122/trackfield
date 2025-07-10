@@ -3,3 +3,5 @@ __pycache__/
 temp_videos/
 *.mp4
 *.avi
+venv/
+*.npy

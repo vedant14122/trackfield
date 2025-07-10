@@ -1,22 +1,28 @@
-<<<<<<< Updated upstream
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
-=======
 import numpy as np
-import google.generativeai as genai
-import os
->>>>>>> Stashed changes
 
 load_dotenv()
 
-<<<<<<< Updated upstream
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     raise ValueError("❌ GEMINI_API_KEY not found in .env file.")
 
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-pro")
+
+
+def calculate_angle(a, b, c):
+    """Calculate angle between three points a, b, c where b is the vertex."""
+    a = np.array(a)
+    b = np.array(b)
+    c = np.array(c)
+    ba = a - b
+    bc = c - b
+    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc) + 1e-8)
+    angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
+    return np.degrees(angle)
 
 
 def summarize_angles(angle_data):
@@ -56,7 +62,8 @@ def get_gemini_feedback(angle_data):
 
     response = model.generate_content(prompt)
     return response.text
-=======
+
+
 def compare_to_model(smoothed_3d, model):
     feedback = []
     for frame_idx, frame in enumerate(smoothed_3d):
@@ -100,6 +107,7 @@ def compare_to_model(smoothed_3d, model):
         feedback.append("Form looks good!")
     return feedback
 
+
 def detect_keyframes(smoothed_3d, threshold=10):
     """
     Detect keyframes based on changes in joint angles or positions.
@@ -123,7 +131,7 @@ def detect_keyframes(smoothed_3d, threshold=10):
         prev_knee = knee_angle
     return keyframes
 
-# Placeholder for Gemini API integration
+
 def generate_gemini_feedback(keyframe_data, user_profile, motion_type):
     """
     Call Gemini 2.0 Flash API to generate coaching feedback for a keyframe.
@@ -145,12 +153,11 @@ Give concise, actionable feedback for this frame, focusing on joint angles and f
     except Exception as e:
         return f"[Gemini error: {e}] Feedback for frame {keyframe_data['frame']} (mock)"
 
+
 def generate_gemini_chat_response(user_profile, question, context):
     """
     Use Gemini 2.0 Flash to answer a user's question about their feedback, form, or performance.
     """
-    import google.generativeai as genai
-    import os
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return "[Gemini not configured]"
@@ -167,4 +174,3 @@ Please provide a helpful, concise, and actionable answer.
         return response.text.strip() if hasattr(response, 'text') else str(response)
     except Exception as e:
         return f"[Gemini error: {e}]"
->>>>>>> Stashed changes

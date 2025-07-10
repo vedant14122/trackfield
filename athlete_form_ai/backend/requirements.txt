@@ -11,10 +11,7 @@ torchvision
 google-generativeai
 python-dotenv
 scipy
-<<<<<<< Updated upstream
 httpx
 python-jose[cryptography]
-=======
 supabase
 urllib3<2.0.0
->>>>>>> Stashed changes

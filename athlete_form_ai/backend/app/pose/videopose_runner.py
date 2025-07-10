@@ -1,14 +1,14 @@
 import torch
 import numpy as np
-<<<<<<< Updated upstream
 import os
 import sys
 
-# Add the VideoPose3D repo to Python path
-sys.path.append(os.path.abspath("models"))
+# Add VideoPose3D to path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'models', 'VideoPose3D'))
 
 from common.model import TemporalModel
 from common.generators import UnchunkedGenerator
+from common.camera import normalize_screen_coordinates
 
 # Load model once and cache
 _model = None
@@ -28,31 +28,14 @@ def load_model():
         dense=False
     )
 
-    checkpoint_path = "models/checkpoint/pretrained_h36m_detectron_coco.bin"
+    checkpoint_path = os.path.join(
+        os.path.dirname(__file__), '..', '..', '..', 'models', 'VideoPose3D', 'checkpoint', 'pretrained_h36m_detectron_coco.bin'
+    )
     checkpoint = torch.load(checkpoint_path, map_location=torch.device("cpu"))
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
     _model = model
     return _model
-
-def convert_to_3d(keypoints_2d):
-    """
-    Args:
-        keypoints_2d: (frames, 17, 2) - 2D joint positions
-    Returns:
-        keypoints_3d: (frames, 17, 3) - 3D joint positions
-    """
-    model = load_model()
-=======
-import sys
-import os
-import torch
-
-# Add VideoPose3D to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'models', 'VideoPose3D'))
-
-from common.model import TemporalModel
-from common.camera import normalize_screen_coordinates
 
 def convert_to_3d(keypoints_2d):
     """
@@ -108,27 +91,11 @@ def convert_to_3d(keypoints_2d):
         keypoints_videopose3d, w=1920, h=1080
     )
     
-    # Load VideoPose3D model
-    model_path = os.path.join(
-        os.path.dirname(__file__), '..', '..', '..', 'models', 'VideoPose3D', 'checkpoint'
-    )
+    # Load and use the actual VideoPose3D model
+    model = load_model()
     
-    # For now, return mock 3D data with proper shape
-    # TODO: Implement actual VideoPose3D model loading and inference
-    frames, joints, _ = keypoints_videopose3d.shape
-    keypoints_3d = np.zeros((frames, joints, 3))
-    
-    # Copy 2D coordinates to first two dimensions
-    keypoints_3d[:, :, :2] = keypoints_videopose3d
-    
-    # Add mock depth (z-coordinate) - replace with actual model inference
-    keypoints_3d[:, :, 2] = np.random.normal(0.5, 0.1, (frames, joints))
-    
-    return keypoints_3d
->>>>>>> Stashed changes
-
     # Wrap in a generator for temporal padding
-    gen = UnchunkedGenerator(None, [keypoints_2d], pad=model.receptive_field() // 2, causal=False)
+    gen = UnchunkedGenerator(None, [keypoints_videopose3d], pad=model.receptive_field() // 2, causal=False)
     inputs_2d = gen.next_epoch()
 
     with torch.no_grad():

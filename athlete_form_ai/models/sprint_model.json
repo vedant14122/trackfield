@@ -2,5 +2,5 @@
   "hip_angle":        { "ideal": 90,  "tolerance": 15 },
   "knee_angle":       { "ideal": 120, "tolerance": 20 },
   "ankle_angle":      { "ideal": 100, "tolerance": 15 },
-  "elbow_angle":      { "ideal": 90,  "tolerance": 15 },
+  "elbow_angle":      { "ideal": 90,  "tolerance": 15 }
 }

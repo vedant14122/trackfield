@@ -1,21 +1,20 @@
-from fastapi import APIRouter, UploadFile, Form
+from fastapi import APIRouter, UploadFile, Form, HTTPException
 import shutil
 import os
-<<<<<<< Updated upstream
 import numpy as np
+import json
+from datetime import datetime
+import logging
 
 from app.pose.mediapipe_runner import extract_2d_keypoints
 from app.pose.videopose_runner import convert_to_3d
 from app.pose.kalman_filter import smooth_pose
-=======
-import json
-from datetime import datetime
-import logging
->>>>>>> Stashed changes
 
 router = APIRouter()
 
-<<<<<<< Updated upstream
+# Constants
+STORAGE_DIR = "storage"
+os.makedirs(STORAGE_DIR, exist_ok=True)
 
 def calculate_angle(a, b, c):
     a = np.array(a)
@@ -108,13 +107,57 @@ def calculate_angles_from_pose(smoothed_3d):
 
     return all_angles
 
-=======
+
 def save_feedback_file(feedback: dict, filename: str):
     path = os.path.join(STORAGE_DIR, filename)
     with open(path, "w") as f:
         json.dump(feedback, f, indent=2)
     return path
->>>>>>> Stashed changes
+
+
+async def save_to_temp(file: UploadFile):
+    """Save uploaded file to temporary location."""
+    temp_path = os.path.join("temp", file.filename)
+    os.makedirs("temp", exist_ok=True)
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    return temp_path
+
+
+def process_video(video_path: str, user_profile: str, motion_type: str):
+    """Process video and generate feedback."""
+    # Extract 2D keypoints
+    keypoints_2d = extract_2d_keypoints(video_path)
+    
+    # Convert to 3D
+    keypoints_3d = convert_to_3d(keypoints_2d)
+    
+    # Smooth the pose data
+    smoothed_3d = smooth_pose(keypoints_3d)
+    
+    # Calculate angles
+    angles_per_frame = calculate_angles_from_pose(smoothed_3d)
+    
+    # Generate feedback (placeholder for now)
+    classic_feedback = {
+        "frame_count": len(angles_per_frame),
+        "angles_first_frame": angles_per_frame[0] if angles_per_frame else {},
+        "summary": "Video analysis complete"
+    }
+    
+    # Generate keyframes (placeholder)
+    keyframes = [
+        {
+            "frame": 0,
+            "feedback": "Starting position analyzed"
+        }
+    ]
+    
+    return {
+        "classic_feedback": classic_feedback,
+        "keyframes": keyframes
+    }
+
 
 @router.post("/analyze")
 async def analyze_video(
@@ -122,23 +165,7 @@ async def analyze_video(
     user_id: str = Form(...),
     motion_type: str = Form(...)
 ):
-    video_path = f"temp_videos/{file.filename}"
-    os.makedirs("temp_videos", exist_ok=True)
-
-    with open(video_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-<<<<<<< Updated upstream
-    keypoints_2d = extract_2d_keypoints(video_path)
-    keypoints_3d = convert_to_3d(keypoints_2d)
-    smoothed_3d = smooth_pose(keypoints_3d)
-    angles_per_frame = calculate_angles_from_pose(smoothed_3d)
-
-    return {
-        "status": "success",
-        "frame_count": len(angles_per_frame),
-        "angles_first_frame": angles_per_frame[0],
-=======
+    # Save uploaded file
     temp_path = await save_to_temp(file)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -147,8 +174,9 @@ async def analyze_video(
     video_path = os.path.join(STORAGE_DIR, video_filename)
     os.rename(temp_path, video_path)
 
+    # Process the video
     try:
-        feedback_result = process_video(video_path, user_profile, motion_type)
+        feedback_result = process_video(video_path, "user_profile", motion_type)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -158,23 +186,22 @@ async def analyze_video(
     feedback_filename = f"{base_name}_feedback.json"
     feedback_path = save_feedback_file(feedback_result, feedback_filename)
 
-    # Store keyframes in Supabase
-    if supabase is not None:
-        for kf in keyframes:
-            supabase.table("keyframes").insert({
-                "user_id": user_id,
-                "video_filename": video_filename,
-                "frame": kf["frame"],
-                "feedback": kf["feedback"],
-                "created_at": datetime.now().isoformat(),
-            }).execute()
-    else:
-        logging.warning("Supabase client is None, skipping keyframe storage.")
+    # Store keyframes in Supabase (placeholder - supabase client not imported)
+    # if supabase is not None:
+    #     for kf in keyframes:
+    #         supabase.table("keyframes").insert({
+    #             "user_id": user_id,
+    #             "video_filename": video_filename,
+    #             "frame": kf["frame"],
+    #             "feedback": kf["feedback"],
+    #             "created_at": datetime.now().isoformat(),
+    #         }).execute()
+    # else:
+    #     logging.warning("Supabase client is None, skipping keyframe storage.")
 
     return {
         "message": "Analysis complete.",
         "video_url": f"/static/{video_filename}",
         "feedback_url": f"/static/{feedback_filename}",
         "feedback": feedback_result
->>>>>>> Stashed changes
     }
