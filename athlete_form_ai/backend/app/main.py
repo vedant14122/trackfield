@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.routes import analyze
+from app.routes import analyze, health, keyframes, chat
 
 app = FastAPI()
 
@@ -16,7 +16,10 @@ app.add_middleware(
 )
 
 # API routes
+app.include_router(health.router)
 app.include_router(analyze.router)
+app.include_router(keyframes.router)
+app.include_router(chat.router)
 
 # Serve local storage files (videos + feedback)
 app.mount("/static", StaticFiles(directory="storage"), name="static")

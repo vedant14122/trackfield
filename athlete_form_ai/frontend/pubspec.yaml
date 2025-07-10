@@ -1,12 +1,32 @@
+name: athlete_form_ai_frontend
+description: Flutter frontend for athlete form analysis
+
+environment:
+  sdk: '^3.8.0'
+
 dependencies:
   flutter:
     sdk: flutter
+<<<<<<< Updated upstream
       webview_flutter: ^4.2.2
+=======
+  supabase_flutter: ^2.5.2
+  image_picker: ^1.0.7
+>>>>>>> Stashed changes
   dio: ^5.4.0
-  file_picker: ^6.1.1
+  file_picker: ^10.2.0
+  video_player: ^2.7.2
+  flutter_spinkit: ^5.1.0
   permission_handler: ^11.3.0
   camera: ^0.10.5
   path_provider: ^2.0.15
-  http: ^0.13.5
-  video_player: ^2.7.2
-  flutter_spinkit: ^5.1.0
+  http: ^1.4.0
+  intl: ^0.19.0
+  url_launcher: ^6.2.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
