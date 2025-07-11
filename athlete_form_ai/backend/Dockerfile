@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-# Install system dependencies for mediapipe and OpenCV
+# Install system dependencies for mediapipe
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     libglib2.0-0 \
@@ -17,4 +17,4 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-CMD ["gunicorn", "app.main:app", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:10000"] 
+CMD ["python", "run_server.py"] 
