@@ -13,6 +13,9 @@ WORKDIR /app
 
 COPY requirements.txt .
 
+# Debug: print system architecture
+RUN uname -a
+
 # Debug: print Python and pip details
 RUN python --version && pip --version && pip debug --verbose || true
 
