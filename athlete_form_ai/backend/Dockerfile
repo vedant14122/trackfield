@@ -12,7 +12,13 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY requirements.txt .
-RUN python --version
+
+# Debug: print Python and pip details
+RUN python --version && pip --version && pip debug --verbose || true
+
+# Try installing mediapipe directly for debug
+RUN pip install mediapipe || true
+
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
