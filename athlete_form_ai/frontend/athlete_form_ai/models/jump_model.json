@@ -1,0 +1,6 @@
+{
+  "hip_angle":        { "ideal": 100, "tolerance": 10 },
+  "knee_angle":       { "ideal": 90,  "tolerance": 15 },
+  "ankle_angle":      { "ideal": 105, "tolerance": 10 },
+  "elbow_angle":      { "ideal": 100, "tolerance": 10 }
+}

@@ -1,0 +1,12 @@
+name: supabase_connection_test
+description: A minimal test script to verify Supabase connectivity
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  supabase_flutter: ^2.3.4
+  http: ^1.1.0
+
+dev_dependencies:
+  test: ^1.24.0 

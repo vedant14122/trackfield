@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+mediapipe==0.10.9
+opencv-python
+numpy
+pykalman
+python-multipart
+pydantic
+torch
+torchvision
+google-generativeai
+python-dotenv
+scipy
+httpx
+python-jose[cryptography]
+supabase
+urllib3<2.0.0
