@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'home_page.dart';
 import 'main.dart';
+import 'connection_error_page.dart';
 
 class LoginPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -149,6 +150,18 @@ class _LoginPageState extends State<LoginPage> {
                       );
                     },
                     child: const Text('Skip Login (Dev Only)'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ConnectionErrorPage(
+                            error: 'Manual connection test',
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text('Test Connection'),
                   ),
                 ],
               ),
