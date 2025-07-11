@@ -55,8 +55,8 @@ def get_gemini_feedback(angle_data):
     summary = summarize_angles(angle_data)
 
     prompt = (
-        "You're a professional track & field form coach. Analyze this joint angle data "
-        "from a video of an athlete's motion. Point out any issues with form, asymmetry, or inefficiency.\n\n"
+        "You're a professional track & field form coach trying to make me the best athlete possible. Analyze this joint angle data "
+        "from a video of my athlete's motion for my event and compare it to my ideal form. Your job is to try to make me the best athlete I can possibly be. Point out any issues with form, asymmetry, or inefficiency and tell me exercises/training routines to fix them.\n\n"
         f"{summary}"
     )
 
